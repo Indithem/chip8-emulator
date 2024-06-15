@@ -102,8 +102,9 @@ impl super::CPU {
 
             0xA000..=0xAFFF => self.i_register.store(opcode & 0x0FFF),
 
+            #[rustfmt::skip]
             0xB000..=0xBFFF => {
-                self.instruction_ptr = ((opcode & 0x0FFF) + self.register_memory[0] as u16) as usize
+                self.instruction_ptr = ((opcode & 0x0FFF) + self.register_memory[0] as u16) as usize % 0x10000;
             }
 
             0xC000..=0xCFFF => {

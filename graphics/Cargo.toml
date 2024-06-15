@@ -1,0 +1,11 @@
+[package]
+name = "graphics"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+memory = { path = "../memory" }
+winit = { workspace = true }
+pixels = { workspace = true }
+tracing = { workspace = true }

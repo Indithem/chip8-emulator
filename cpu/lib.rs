@@ -17,7 +17,7 @@ struct CPU {
 impl CPU {
     fn new(file: std::fs::File, graphics_memory: Arc<RwLock<GraphicsMemory>>) -> Self {
         CPU {
-            stack: Vec::new(),
+            stack: Vec::with_capacity(16),
             i_register: memory::IRegister::new(),
             register_memory: [0; 16],
             memory: memory::Memory::load_instructions(file),
@@ -69,6 +69,10 @@ enum Registers{
     VF
 }
 
+extern crate memory;
+extern crate graphics;
+
 use std::sync::{Arc, RwLock};
 
-use crate::memory::{self, GraphicsMemory};
+use graphics::GraphicsMemory;
+ 

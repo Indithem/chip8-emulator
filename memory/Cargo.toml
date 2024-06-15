@@ -1,0 +1,8 @@
+[package]
+name = "memory"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+tracing = {workspace = true}

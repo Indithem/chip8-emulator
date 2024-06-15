@@ -1,0 +1,10 @@
+[package]
+name = "cpu"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+memory = { path = "../memory" }
+graphics = { path = "../graphics" }
+tracing = { workspace = true }

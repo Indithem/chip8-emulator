@@ -98,8 +98,15 @@ impl App {
 /// incase any API to dependecy libraries changes
 type Upixel = u32;
 
-use crate::memory::GraphicsMemory;
+extern crate pixels;
+extern crate winit;
+extern crate tracing;
+mod graphics_memory;
+
 use std::sync::{Arc, RwLock};
+use tracing::info;
+
+pub use graphics_memory::GraphicsMemory;
 
 use winit::{
     application::ApplicationHandler,
@@ -108,7 +115,4 @@ use winit::{
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     window::{Window, WindowAttributes, WindowId},
 };
-
 use pixels::{Pixels, SurfaceTexture};
-
-use tracing::info;

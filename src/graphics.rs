@@ -6,6 +6,9 @@ pub const SCREEN_SIZE: (Upixel, Upixel) = (64, 32);
 const WIDTH: Upixel = SCREEN_SIZE.0 * PIXEL_SCALE.0;
 const HEIGHT: Upixel = SCREEN_SIZE.1 * PIXEL_SCALE.1;
 
+const ON_PIXEL_COLOR: [u8; 4] = [0xe8, 0xf2, 0x55, 0xff];
+const OFF_PIXEL_COLOR: [u8; 4] = [0xb5, 0x83, 0x16, 0xff];
+
 pub fn main_thread(graphics_mem: Arc<RwLock<GraphicsMemory>>) {
     // safety: unwrap, as for any failures, we want to panic
 
@@ -56,7 +59,10 @@ impl ApplicationHandler for App {
         use winit::event::StartCause::*;
         match cause {
             // todo: emulate accurate timing/refresh rate
-            Poll => self.draw().unwrap(),
+            Poll => {
+                // self.graphics_mem.write().unwrap().negate();
+                self.draw().unwrap()
+            }
             _ => {}
         }
     }
@@ -78,12 +84,9 @@ impl App {
             .chunks_exact_mut(4)
             .zip(self.graphics_mem.read().unwrap().iter())
         {
-            //todo::improvement: customize colours & A
-            let data = if *memory_value { 0xff } else { 0x00 };
-            display_pixel[0] = data; // R
-            display_pixel[1] = data; // G
-            display_pixel[2] = data; // B
-            display_pixel[3] = 0xff; // A
+            #[rustfmt::skip]
+            let data = if *memory_value { ON_PIXEL_COLOR } else { OFF_PIXEL_COLOR };
+            display_pixel.copy_from_slice(&data);
         }
 
         pixels.render()?;

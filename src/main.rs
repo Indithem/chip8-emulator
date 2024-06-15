@@ -6,24 +6,30 @@
 //! All those data, if needed, will be wrapped in some kind of std::sync lock.
 //! also, they shall be on the heap.
 
-#[allow(unused)]
 mod cpu;
 mod graphics;
 mod input;
-#[allow(unused)]
 mod memory;
 mod sound;
 mod timers;
 
 fn main() {
-
     #[cfg(debug_assertions)]
     tracing_subscriber::fmt::init();
 
     // todo: graphics memory could be shared in other types
     let graphics_mem = Arc::new(RwLock::new(memory::GraphicsMemory::new()));
 
-    
+    let rom = std::fs::File::open("test roms/1-chip8-logo.ch8").expect("Unable to open the file");
+    let graphics_mem_cpu_cpy = Arc::clone(&graphics_mem);
+
+    thread::Builder::new()
+        .name("CPU".to_string())
+        .spawn(move || {
+            cpu::cpu_thread(graphics_mem_cpu_cpy, rom);
+        })
+        .unwrap();
+
     graphics::main_thread(graphics_mem);
 }
 

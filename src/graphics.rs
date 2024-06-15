@@ -1,5 +1,5 @@
 /// The size of one pixel on CHIP-8 screen in the current display.
-const PIXEL_SCALE: (Upixel, Upixel) = (1, 1);
+const PIXEL_SCALE: (Upixel, Upixel) = (20, 20);
 /// the emulator had a window size of 64x32 pixels
 pub const SCREEN_SIZE: (Upixel, Upixel) = (64, 32);
 
@@ -34,7 +34,7 @@ impl ApplicationHandler for App {
             .create_window(
                 WindowAttributes::default()
                     .with_title("CHIP-8 Emulator")
-                    .with_min_inner_size(PhysicalSize::new(HEIGHT, WIDTH))
+                    .with_min_inner_size(PhysicalSize::new(WIDTH, HEIGHT))
                     .with_resizable(true),
             )
             .expect("Failed to create window");
@@ -78,7 +78,7 @@ impl App {
             .chunks_exact_mut(4)
             .zip(self.graphics_mem.read().unwrap().iter())
         {
-            //todo:improvement customize colours & A
+            //todo::improvement: customize colours & A
             let data = if *memory_value { 0xff } else { 0x00 };
             display_pixel[0] = data; // R
             display_pixel[1] = data; // G

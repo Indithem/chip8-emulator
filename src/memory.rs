@@ -30,7 +30,12 @@ const TOTAL_PIXELS: usize =
 impl GraphicsMemory {
     pub fn new() -> Self {
         tracing::info!("Initializing graphics memory");
-        Self([false; TOTAL_PIXELS])
+        // alternating pixels
+        let mut data = [false; TOTAL_PIXELS];
+        for (i, pixel) in data.iter_mut().enumerate() {
+            *pixel = i % 2 == 0;
+        }
+        Self(data)
     }
 
     /// Make a iterator over the pixels as registered in the graphics memory

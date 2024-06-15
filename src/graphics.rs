@@ -9,13 +9,13 @@ const HEIGHT: Upixel = SCREEN_SIZE.1 * PIXEL_SCALE.1;
 const ON_PIXEL_COLOR: [u8; 4] = [0xe8, 0xf2, 0x55, 0xff];
 const OFF_PIXEL_COLOR: [u8; 4] = [0xb5, 0x83, 0x16, 0xff];
 
-pub fn main_thread(graphics_mem: Arc<RwLock<GraphicsMemory>>) {
+pub fn main_thread(graphics_mem: Arc<RwLock<GraphicsMemory>>, barrier: Arc<Barrier>) {
     // safety: unwrap, as for any failures, we want to panic
 
     let event_loop = EventLoop::new().unwrap(); // talk with the OS to create a window
     event_loop.set_control_flow(ControlFlow::Poll); // maybe use waituntil(60hz/sth), but docs say to use poll
 
-    let mut app = App::new(graphics_mem);
+    let mut app = App::new(graphics_mem, barrier);
 
     event_loop.run_app(&mut app).unwrap();
 
@@ -27,6 +27,7 @@ struct App {
     window: Option<Window>,
     graphics_mem: Arc<RwLock<GraphicsMemory>>,
     pixels: Option<Pixels>,
+    barrier: Arc<Barrier>,
 }
 
 impl ApplicationHandler for App {
@@ -42,7 +43,8 @@ impl ApplicationHandler for App {
             )
             .expect("Failed to create window");
         let surface_texture = SurfaceTexture::new(WIDTH, HEIGHT, &window);
-
+        
+        self.barrier.wait();
         self.pixels = Some(Pixels::new(SCREEN_SIZE.0, SCREEN_SIZE.1, surface_texture).unwrap());
         self.window = Some(window);
         self.draw().unwrap();
@@ -69,11 +71,12 @@ impl ApplicationHandler for App {
 }
 
 impl App {
-    fn new(graphics_mem: Arc<RwLock<GraphicsMemory>>) -> Self {
+    fn new(graphics_mem: Arc<RwLock<GraphicsMemory>>, barrier: Arc<Barrier>) -> Self {
         Self {
             window: None,
             pixels: None,
             graphics_mem,
+            barrier,
         }
     }
 
@@ -99,7 +102,7 @@ impl App {
 type Upixel = u32;
 
 use crate::memory::GraphicsMemory;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Barrier, RwLock};
 
 use winit::{
     application::ApplicationHandler,

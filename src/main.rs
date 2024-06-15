@@ -17,24 +17,30 @@ fn main() {
     #[cfg(debug_assertions)]
     tracing_subscriber::fmt::init();
 
+    let initialize_all_components = Arc::new(Barrier::new(2));
+
     // todo: graphics memory could be shared in other types
     let graphics_mem = Arc::new(RwLock::new(memory::GraphicsMemory::new()));
 
     let rom = std::fs::File::open("test roms/1-chip8-logo.ch8").expect("Unable to open the file");
     let graphics_mem_cpu_cpy = Arc::clone(&graphics_mem);
+    let cpu_thread_blocker = Arc::clone(&initialize_all_components);
 
+    // todo: when cpu sneezes, the rest of the components should catch a cold
     thread::Builder::new()
         .name("CPU".to_string())
         .spawn(move || {
-            cpu::cpu_thread(graphics_mem_cpu_cpy, rom);
+            let mut cpu = cpu::CPU::new(rom, graphics_mem_cpu_cpy);
+            cpu_thread_blocker.wait();
+            tracing::info!("CPU thread started");
+            cpu.run();
         })
         .unwrap();
 
-    graphics::main_thread(graphics_mem);
+    graphics::main_thread(graphics_mem, initialize_all_components);
 }
 
-#[allow(unused_imports)]
 use std::{
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, Barrier, RwLock},
     thread,
 };

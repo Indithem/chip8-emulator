@@ -50,6 +50,10 @@ impl GraphicsMemory {
         }
     }
 
+    pub fn clear(&mut self) {
+        self.0 = [false; Self::TOTAL_PIXELS];
+    }
+
     #[cfg(debug_assertions)]
     #[allow(unused)]
     /// For sake of testint, negate all the pixels
@@ -71,22 +75,22 @@ impl Memory {
             .expect("Unable to read the file");
         Memory(data)
     }
-
-    pub fn get(&self, address: usize) -> Option<u8> {
-        if address < 4096 {
-            Some(self.0[address])
-        } else {
-            None
-        }
-    }
 }
 
-
-impl IRegister{
+impl IRegister {
     pub fn new() -> Self {
         Self {
             data: 0,
             assigned: false,
+        }
+    }
+
+    pub fn store(&mut self, value: u16) {
+        if !self.assigned {
+            self.data = value;
+            self.assigned = true;
+        } else {
+            panic!("I register already assigned, tried to assign new value");
         }
     }
 }
@@ -137,4 +141,7 @@ impl IndexMut<usize> for GraphicsMemory {
     }
 }
 
-use std::{io::Read, ops::{Index, IndexMut}};
+use std::{
+    io::Read,
+    ops::{Index, IndexMut},
+};

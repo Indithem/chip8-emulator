@@ -6,6 +6,8 @@
 ///
 /// ## Note
 /// Donot allocate it on stack, as it itself is 4KiB
+///     nah, I did.
+#[derive(Debug)]
 pub struct Memory([u8; 4096]);
 
 /// The I register
@@ -16,6 +18,8 @@ pub struct Memory([u8; 4096]);
 pub struct IRegister {
     data: u16,
     /// Is the I-register modified before?
+    ///
+    /// maybe this is not needed.
     ///
     /// This is needed because, in CHIP-8,
     /// `
@@ -33,11 +37,29 @@ impl GraphicsMemory {
 
     pub fn new() -> Self {
         tracing::info!("Initializing graphics memory");
-        // alternating pixels
         let mut data = [false; Self::TOTAL_PIXELS];
-        for (i, pixel) in data.iter_mut().enumerate() {
-            *pixel = i % 2 == 0;
-        }
+        // a simple design of a 5x5 square
+        data[0] = true;
+        data[1] = true;
+        data[2] = true;
+        data[3] = true;
+        data[4] = true;
+        data[5] = true;
+        data[10] = true;
+        data[15] = true;
+        data[20] = true;
+        data[21] = true;
+        data[22] = true;
+        data[23] = true;
+        data[24] = true;
+
+        data[63] = true;
+        data[63+64] = true;
+        data[63+128] = true;
+        data[63+192] = true;
+        data[63+256] = true;
+        data[63+320] = true;
+        data[63+384] = true;
         Self(data)
     }
 
@@ -50,13 +72,38 @@ impl GraphicsMemory {
         }
     }
 
-    pub fn clear(&mut self) {
+    pub fn clear_screen(&mut self) {
         self.0 = [false; Self::TOTAL_PIXELS];
+    }
+
+    #[rustfmt::skip]
+    pub fn display_sprite(&mut self, x: u8, y: u8, sprite: &[u8]) -> bool {
+        const MAX_X: usize = crate::graphics::SCREEN_SIZE.0 as usize;
+        const MAX_Y: usize = crate::graphics::SCREEN_SIZE.1 as usize;
+
+        let mut collision = false;
+        for (y_off, sprite_byte) in sprite.iter().enumerate() {
+            let y = y as usize + y_off;
+            if y >= MAX_Y { Self::report_out_of_screen(x, y as u8); continue; }
+            for x_off in 0..8 {
+                let x = x as usize + x_off;
+                if x >= MAX_X { Self::report_out_of_screen(x as u8, y as u8); continue; }
+                let pixel = &mut self.0[y*MAX_Y + x];
+                let sprite_pixel = (sprite_byte >> (7 - x_off)) & 0x1 == 1;
+                collision |= *pixel && sprite_pixel;
+                *pixel ^= sprite_pixel;
+            }
+        }
+        collision
+    }
+
+    fn report_out_of_screen(x: u8, y: u8) {
+        tracing::error!("Sprite out of screen, x: {}, y: {}", x, y);
     }
 
     #[cfg(debug_assertions)]
     #[allow(unused)]
-    /// For sake of testint, negate all the pixels
+    /// For sake of testing, negate all the pixels
     pub fn negate(&mut self) {
         for pixel in self.0.iter_mut() {
             *pixel = !*pixel;
@@ -86,12 +133,12 @@ impl IRegister {
     }
 
     pub fn store(&mut self, value: u16) {
-        if !self.assigned {
-            self.data = value;
-            self.assigned = true;
-        } else {
-            panic!("I register already assigned, tried to assign new value");
-        }
+        self.data = value;
+        self.assigned = true;
+    }
+
+    pub fn get(&self) -> u16 {
+        self.data
     }
 }
 
@@ -119,6 +166,13 @@ impl Index<usize> for Memory {
     type Output = u8;
 
     fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
+    }
+}
+impl Index<std::ops::Range<usize>> for Memory {
+    type Output = [u8];
+
+    fn index(&self, index: std::ops::Range<usize>) -> &Self::Output {
         &self.0[index]
     }
 }

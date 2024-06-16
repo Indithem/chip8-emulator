@@ -20,10 +20,15 @@ impl CPU {
         }
     }
 
+    #[rustfmt::skip]
     pub fn run(&mut self) -> ! {
+        let mut cycles = 0u64;
         loop {
             let opcode = self.fetch_opcode();
-            self.run_opcode(opcode);
+            #[cfg(debug_assertions)]
+            pause(format!("Starting Cycle: {}, CPU state: {}", cycles, self.dump_without_memory(opcode)));
+            self.follow_isa(opcode);
+            cycles += 1;
         }
     }
 
@@ -34,8 +39,26 @@ impl CPU {
         opcode
     }
 
-    #[rustfmt::skip]
     fn dump(&self, opcode: impl Into<Option<u16>>) -> String {
+        format!(
+            "CPU Dump:
+            Memory: {:?}
+            Stack: {:?}
+            {:?}
+            Registry Memory: {:?}
+            Current Opcode pointer: 0x{:04X}
+            Opcode: {:?}
+            ",
+            self.memory,
+            self.stack,
+            self.i_register,
+            self.register_memory,
+            self.instruction_ptr,
+            opcode.into().map(|x| format!("{:04X}", x))
+        )
+    }
+
+    fn dump_without_memory(&self, opcode: impl Into<Option<u16>>) -> String {
         format!(
             "CPU Dump:
             Stack: {:?}
@@ -44,11 +67,21 @@ impl CPU {
             Current Opcode pointer: 0x{:04X}
             Opcode: {:?}
             ",
-            self.stack, self.i_register, self.register_memory, self.instruction_ptr, opcode.into().map(|x| format!("{:04X}", x))
+            self.stack,
+            self.i_register,
+            self.register_memory,
+            self.instruction_ptr,
+            opcode.into().map(|x| format!("{:04X}", x))
         )
     }
 }
 
+fn pause(msg: String) {
+    tracing::info!("{}", msg);
+    stdin().read(&mut [0, 0]).unwrap();
+}
+
+use std::io::{stdin, Read};
 use std::sync::{Arc, RwLock};
 
 use crate::memory::{self, GraphicsMemory};

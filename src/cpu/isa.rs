@@ -1,16 +1,16 @@
 impl super::CPU {
     /// completely inspired from https://github.com/mattmikolay/chip-8/wiki/CHIP%E2%80%908-Instruction-Set
-    pub fn run_opcode(&mut self, opcode: u16) {
-        let register_x = (opcode & 0x0F00 >> 8) as usize;
-        let register_y = (opcode & 0x00F0 >> 4) as usize;
+    pub fn follow_isa(&mut self, opcode: u16) {
+        let register_x = ((opcode & 0x0F00) / 0x100) as usize;
+        let register_y = ((opcode & 0x00F0) / 0x10) as usize;
         match opcode {
-            0x00E0 => self.graphics_memory.write().unwrap().clear(),
+            0x00E0 => self.graphics_memory.write().unwrap().clear_screen(),
 
             #[rustfmt::skip]
             0x00EE => self.instruction_ptr = self.stack.pop().expect(&format!("No function call to return to, cpu state: {}", self.dump(opcode))),
 
             0..=0x0FFF => {
-                todo!("I dont understand this opcode, {}", opcode);
+                tracing::error!("I dont understand this opcode, {}", opcode);
                 self.stack.push(self.instruction_ptr);
                 self.instruction_ptr = opcode as usize;
             }
@@ -38,13 +38,14 @@ impl super::CPU {
                 }
             }
 
+            #[rustfmt::skip]
             0x5000..=0x5FFF => {
-                let v1 = self.register_memory[register_x];
-                let v2 = self.register_memory[register_y];
-                if v1 == v2 {
-                    self.instruction_ptr += 2;
-                }
-            }
+                if opcode & 0x000F == 0 {
+                    let v1 = self.register_memory[register_x];
+                    let v2 = self.register_memory[register_y];
+                    if v1 == v2 { self.instruction_ptr += 2; }
+                } else { unreachable!("Unknown opcode, cpu state: {}", self.dump(opcode)) }
+            },
 
             0x6000..=0x6FFF => {
                 let value = opcode & 0x00FF;
@@ -112,10 +113,17 @@ impl super::CPU {
                 self.register_memory[register_x] = random_number & (opcode & 0x00FF) as u8;
             }
 
-            0xD000..=0xDFFF => todo!(
-                "Need to implement sprites yet!\nCPU State: {}",
-                self.dump(opcode)
-            ),
+            0xD000..=0xDFFF => {
+                self.register_memory[0xF] = self.graphics_memory.write().unwrap().display_sprite(
+                    self.register_memory[register_x],
+                    self.register_memory[register_y],
+                    {
+                        let n = (opcode & 0x000F) as usize;
+                        let start_idx = self.i_register.get() as usize;
+                        &self.memory[start_idx..start_idx + n]
+                    },
+                ) as u8;
+            }
 
             _ => panic!("Unknown state, {}", self.dump(opcode)),
         }

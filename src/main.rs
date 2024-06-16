@@ -14,7 +14,6 @@ mod sound;
 mod timers;
 
 fn main() {
-    #[cfg(debug_assertions)]
     tracing_subscriber::fmt::init();
 
     let initialize_all_components = Arc::new(Barrier::new(2));

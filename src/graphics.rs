@@ -43,7 +43,7 @@ impl ApplicationHandler for App {
             )
             .expect("Failed to create window");
         let surface_texture = SurfaceTexture::new(WIDTH, HEIGHT, &window);
-        
+
         self.barrier.wait();
         self.pixels = Some(Pixels::new(SCREEN_SIZE.0, SCREEN_SIZE.1, surface_texture).unwrap());
         self.window = Some(window);
@@ -53,6 +53,10 @@ impl ApplicationHandler for App {
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
+            WindowEvent::Resized(physical_size) => {
+                let pixels = self.pixels.as_mut().unwrap();
+                pixels.resize_surface(physical_size.width, physical_size.height).unwrap();
+            },
             _ => {}
         }
     }
@@ -80,13 +84,13 @@ impl App {
         }
     }
 
-    fn draw(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    fn draw(&mut self) -> Result<(), Box<dyn std::error::Error + '_>> {
         let pixels = self.pixels.as_mut().ok_or("Pixels not initialized")?;
         let frame = pixels.frame_mut();
-        for (display_pixel, memory_value) in frame
-            .chunks_exact_mut(4)
-            .zip(self.graphics_mem.read().unwrap().iter())
-        {
+        for (display_pixel, memory_value) in std::iter::zip(
+            frame.chunks_exact_mut(4),
+            self.graphics_mem.read()?.iter(),
+        ) {
             #[rustfmt::skip]
             let data = if *memory_value { ON_PIXEL_COLOR } else { OFF_PIXEL_COLOR };
             display_pixel.copy_from_slice(&data);

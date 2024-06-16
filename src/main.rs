@@ -21,7 +21,7 @@ fn main() {
     // todo: graphics memory could be shared in other types
     let graphics_mem = Arc::new(RwLock::new(memory::GraphicsMemory::new()));
 
-    let rom = std::fs::File::open("test roms/1-chip8-logo.ch8").expect("Unable to open the file");
+    let rom = std::fs::File::open("test roms/2-ibm-logo.ch8").expect("Unable to open the file");
     let graphics_mem_cpu_cpy = Arc::clone(&graphics_mem);
     let cpu_thread_blocker = Arc::clone(&initialize_all_components);
 

@@ -80,15 +80,17 @@ impl GraphicsMemory {
     pub fn display_sprite(&mut self, x: u8, y: u8, sprite: &[u8]) -> bool {
         const MAX_X: usize = crate::graphics::SCREEN_SIZE.0 as usize;
         const MAX_Y: usize = crate::graphics::SCREEN_SIZE.1 as usize;
+        let x = x as usize % MAX_X;
+        let y = y as usize % MAX_Y;
 
         let mut collision = false;
         for (y_off, sprite_byte) in sprite.iter().enumerate() {
-            let y = y as usize + y_off;
-            if y >= MAX_Y { Self::report_out_of_screen(x, y as u8); continue; }
+            let y = y + y_off;
+            if y >= MAX_Y { Self::report_out_of_screen(x, y); continue; }
             for x_off in 0..8 {
-                let x = x as usize + x_off;
-                if x >= MAX_X { Self::report_out_of_screen(x as u8, y as u8); continue; }
-                let pixel = &mut self.0[y*MAX_Y + x];
+                let x = x + x_off;
+                if x >= MAX_X { Self::report_out_of_screen(x, y); continue; }
+                let pixel = &mut self.0[y*MAX_X + x];
                 let sprite_pixel = (sprite_byte >> (7 - x_off)) & 0x1 == 1;
                 collision |= *pixel && sprite_pixel;
                 *pixel ^= sprite_pixel;
@@ -97,8 +99,8 @@ impl GraphicsMemory {
         collision
     }
 
-    fn report_out_of_screen(x: u8, y: u8) {
-        tracing::error!("Sprite out of screen, x: {}, y: {}", x, y);
+    fn report_out_of_screen(x: usize, y: usize) {
+        tracing::warn!("Sprite out of screen, x: {}, y: {}, Clipping it!", x, y);
     }
 
     #[cfg(debug_assertions)]

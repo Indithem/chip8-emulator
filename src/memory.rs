@@ -10,23 +10,6 @@
 #[derive(Debug)]
 pub struct Memory([u8; 4096]);
 
-/// The I register
-///
-/// # Safety
-///  The I register is ideally 12 bits wide, use with caution
-#[derive(Debug)]
-pub struct IRegister {
-    data: u16,
-    /// Is the I-register modified before?
-    ///
-    /// maybe this is not needed.
-    ///
-    /// This is needed because, in CHIP-8,
-    /// `
-    ///  No instructions exist to modify the I register after it is set to a given value.
-    /// `
-    assigned: bool,
-}
 
 impl Memory {
     /// The memory address where the instructions would start
@@ -38,24 +21,6 @@ impl Memory {
         file.read(&mut data[Self::INSTRUCTIONS_START_ADDRESS..])
             .expect("Unable to read the file");
         Memory(data)
-    }
-}
-
-impl IRegister {
-    pub fn new() -> Self {
-        Self {
-            data: 0,
-            assigned: false,
-        }
-    }
-
-    pub fn store(&mut self, value: u16) {
-        self.data = value;
-        self.assigned = true;
-    }
-
-    pub fn get(&self) -> u16 {
-        self.data
     }
 }
 
@@ -91,6 +56,11 @@ impl Index<std::ops::Range<usize>> for Memory {
 
     fn index(&self, index: std::ops::Range<usize>) -> &Self::Output {
         &self.0[index]
+    }
+}
+impl IndexMut<std::ops::Range<usize>> for Memory {
+    fn index_mut(&mut self, index: std::ops::Range<usize>) -> &mut Self::Output {
+        &mut self.0[index]
     }
 }
 impl IndexMut<usize> for Memory {

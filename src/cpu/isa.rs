@@ -53,8 +53,9 @@ impl super::CPU {
             }
 
             0x7000..=0x7FFF => {
-                let value = opcode & 0x00FF;
-                self.register_memory[register_x] += value as u8;
+                let value = (opcode & 0x00FF) as u8;
+                let reg_mem = &mut self.register_memory[register_x];
+                *reg_mem = reg_mem.wrapping_add(value);
             }
 
             0x8000..=0x8FFF => match opcode & 0x000F {
@@ -101,7 +102,7 @@ impl super::CPU {
                 } else { unreachable!("Unknown opcode, cpu state: {}", self.dump(opcode)) }
             },
 
-            0xA000..=0xAFFF => self.i_register.store(opcode & 0x0FFF),
+            0xA000..=0xAFFF => self.i_register = opcode & 0x0FFF,
 
             #[rustfmt::skip]
             0xB000..=0xBFFF => {
@@ -119,13 +120,52 @@ impl super::CPU {
                     self.register_memory[register_y],
                     {
                         let n = (opcode & 0x000F) as usize;
-                        let start_idx = self.i_register.get() as usize;
+                        let start_idx = self.i_register as usize;
                         &self.memory[start_idx..start_idx + n]
                     },
                 ) as u8;
             }
 
-            _ => panic!("Unknown state, {}", self.dump(opcode)),
+            0xE00..=0xEFFF => todo!("Need to implement key presses!"),
+
+            #[rustfmt::skip]
+            0xF00..=0xFFFF => {
+                let function = (opcode & 0x00FF) as u8;
+                match function {
+                    0x07 => todo!("Timers not yet implemented!"),
+                    0x0A => todo!("Key presses not yet implemented!"),
+                    0x15 => todo!("Timers not yet implemented!"),
+                    0x18 => todo!("Timers not yet implemented!"),
+
+                    0x1E => self.i_register = self.i_register.wrapping_add(self.register_memory[register_x] as u16),
+
+                    0x29 => todo!("Digit fonts!?"),
+
+                    0x33 => {
+                        let addr = self.i_register as usize;
+                        let slice = &mut self.memory[addr..addr + 3];
+                        let val = self.register_memory[register_x];
+                        let (hundreds, tens, ones) = (val / 100, (val % 100) / 10, val % 10);
+                        slice.copy_from_slice(&[hundreds, tens, ones]);
+                    }
+
+                    0x55 => {
+                        let addr = self.i_register as usize;
+                        let slice = &mut self.memory[addr..addr + register_x + 1];
+                        slice.copy_from_slice(&self.register_memory[..=register_x]);
+                        self.i_register += register_x as u16 + 1;
+                    }
+
+                    0x65 => {
+                        let addr = self.i_register as usize;
+                        let slice = &self.memory[addr..addr + register_x + 1];
+                        self.register_memory[..=register_x].copy_from_slice(slice);
+                        self.i_register += register_x as u16 + 1;
+                    }
+
+                    _ => unreachable!("Unknown opcode, cpu state: {}", self.dump(opcode)),
+                }
+            }
         }
     }
 }

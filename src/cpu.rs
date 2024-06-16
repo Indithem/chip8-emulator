@@ -1,7 +1,7 @@
 pub struct CPU {
     /// Stores the return addresses
     stack: Vec<usize>,
-    i_register: memory::IRegister,
+    i_register: u16,
     register_memory: [u8; 16],
     memory: memory::Memory,
     graphics_memory: Arc<RwLock<GraphicsMemory>>,
@@ -12,7 +12,7 @@ impl CPU {
     pub fn new(file: std::fs::File, graphics_memory: Arc<RwLock<GraphicsMemory>>) -> Self {
         CPU {
             stack: Vec::new(),
-            i_register: memory::IRegister::new(),
+            i_register: 0,
             register_memory: [0; 16],
             memory: memory::Memory::load_instructions(file),
             graphics_memory,

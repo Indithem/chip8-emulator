@@ -21,14 +21,20 @@ impl CPU {
     }
 
     #[rustfmt::skip]
-    pub fn run(&mut self) -> ! {
+    pub fn run_with_pauses(&mut self) -> ! {
         let mut cycles = 0u64;
         loop {
             let opcode = self.fetch_opcode();
-            #[cfg(debug_assertions)]
             pause(format!("Starting Cycle: {}, CPU state: {}", cycles, self.dump_without_memory(opcode)));
             self.follow_isa(opcode);
             cycles += 1;
+        }
+    }
+
+    pub fn run(&mut self) -> ! {
+        loop {
+            let opcode = self.fetch_opcode();
+            self.follow_isa(opcode);
         }
     }
 
@@ -84,7 +90,8 @@ fn pause(msg: String) {
 use std::io::{stdin, Read};
 use std::sync::{Arc, RwLock};
 
-use crate::memory::{self, GraphicsMemory};
+use crate::memory;
+use crate::graphics::GraphicsMemory;
 
 /// Has function for decoding and executing the opcodes
 mod isa;

@@ -6,10 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+clap = { version = "4.5.7", features = ["cargo", "derive"] }
 pixels = "0.13.0"
 rand = "0.8.5"
 tracing = "0.1.40"
-tracing-subscriber = "0.3.18"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 winit = { version = "0.30.1", features = ["rwh_05"] }
 
 

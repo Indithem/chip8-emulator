@@ -41,12 +41,15 @@ fn main() {
 
     // cpu thread
     // todo: when cpu sneezes, the rest of the components should catch a cold
+    // or maybe not?
     thread::Builder::new()
         .name("CPU".to_string())
         .spawn(move || {
-            let mut cpu = cpu::CPU::new(rom, graphics_mem_cpu_cpy, cpu_delay_timer);
+            let cpu_constructed = cpu::CPU::new(rom, graphics_mem_cpu_cpy, cpu_delay_timer);
+            // no unblock before panicing the thread, else the  window becomes unresponsive
             cpu_thread_blocker.wait();
             tracing::info!("CPU thread started");
+            let mut cpu = cpu_constructed.expect("Failed to construct the CPU");
             if pauses {
                 cpu.run_with_pauses()
             } else {

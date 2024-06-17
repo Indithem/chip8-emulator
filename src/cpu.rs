@@ -14,16 +14,16 @@ impl CPU {
         file: std::fs::File,
         graphics_memory: Arc<RwLock<GraphicsMemory>>,
         delay_timer: Arc<RwLock<BaseTimer>>,
-    ) -> Self {
-        CPU {
+    ) -> Result<Self, &'static str> {
+        Ok(CPU {
             stack: Vec::new(),
             i_register: 0,
             register_memory: [0; 16],
-            memory: memory::Memory::load_instructions(file),
+            memory: memory::Memory::load_instructions(file)?,
             graphics_memory,
             instruction_ptr: memory::Memory::INSTRUCTIONS_START_ADDRESS,
             delay_timer,
-        }
+        })
     }
 
     #[rustfmt::skip]

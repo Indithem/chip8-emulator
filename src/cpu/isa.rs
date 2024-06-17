@@ -76,7 +76,7 @@ impl super::CPU {
                     self.register_memory[0xF] = !overflow as u8;
                 }
                 0x6 => {
-                    self.register_memory[0xF] = self.register_memory[register_x] & 0x1;
+                    self.register_memory[0xF] = self.register_memory[register_y] & 0x1;
                     self.register_memory[register_x] = self.register_memory[register_y] >> 1;
                 }
                 0x7 => {
@@ -86,7 +86,7 @@ impl super::CPU {
                     self.register_memory[0xF] = !overflow as u8;
                 }
                 0xE => {
-                    self.register_memory[0xF] = self.register_memory[register_x] & 0x80;
+                    self.register_memory[0xF] = self.register_memory[register_y] & 0x80;
                     self.register_memory[register_x] = self.register_memory[register_y] << 1;
                 }
 
@@ -139,7 +139,14 @@ impl super::CPU {
 
                     0x1E => self.i_register = self.i_register.wrapping_add(self.register_memory[register_x] as u16),
 
-                    0x29 => todo!("Digit fonts!?"),
+                    0x29 => {
+                        let digit = self.register_memory[register_x];
+                        let digit = if digit > 0xF {
+                            tracing::warn!("Trying to get a digit font for a non digit value: {}", digit);
+                            digit % 0xF
+                        } else {digit};
+                        self.i_register = memory::Memory::get_digit_address(digit) as u16;
+                    },
 
                     0x33 => {
                         let addr = self.i_register as usize;
@@ -169,3 +176,5 @@ impl super::CPU {
         }
     }
 }
+
+use crate::memory;

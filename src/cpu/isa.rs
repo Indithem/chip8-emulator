@@ -132,9 +132,9 @@ impl super::CPU {
             0xF00..=0xFFFF => {
                 let function = (opcode & 0x00FF) as u8;
                 match function {
-                    0x07 => todo!("Timers not yet implemented!"),
+                    0x07 => self.register_memory[register_x] = self.delay_timer.read().unwrap().read(),
                     0x0A => todo!("Key presses not yet implemented!"),
-                    0x15 => todo!("Timers not yet implemented!"),
+                    0x15 => self.delay_timer.write().unwrap().set_timer(self.register_memory[register_x]),
                     0x18 => todo!("Timers not yet implemented!"),
 
                     0x1E => self.i_register = self.i_register.wrapping_add(self.register_memory[register_x] as u16),

@@ -49,10 +49,10 @@ impl ApplicationHandler for App {
             .expect("Failed to create window");
         let surface_texture = SurfaceTexture::new(WIDTH, HEIGHT, &window);
 
-        self.barrier.wait();
         self.pixels = Some(Pixels::new(SCREEN_SIZE.0, SCREEN_SIZE.1, surface_texture).unwrap());
         self.window = Some(window);
         self.draw().unwrap();
+        self.barrier.wait();
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
@@ -114,6 +114,7 @@ impl App {
         }
 
         pixels.render()?;
+        std::thread::sleep(std::time::Duration::from_micros(1_000_000 / 60)); // 60Hz
         Ok(())
     }
 }

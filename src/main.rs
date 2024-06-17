@@ -26,21 +26,25 @@ fn main() {
         }
     }
 
-    let initialize_all_components = Arc::new(Barrier::new(2));
+    let sync_barrier = Arc::new(Barrier::new(3));
+
+    let delay_timer = Arc::new(RwLock::new(timers::BaseTimer::new()));
 
     // todo: graphics memory could be shared in other types
     let graphics_mem = Arc::new(RwLock::new(graphics::GraphicsMemory::new()));
 
     let rom = std::fs::File::open(args.rom_path).expect("Unable to open the file");
     let graphics_mem_cpu_cpy = Arc::clone(&graphics_mem);
-    let cpu_thread_blocker = Arc::clone(&initialize_all_components);
+    let cpu_thread_blocker = Arc::clone(&sync_barrier);
     let pauses = args.pauses;
+    let cpu_delay_timer = Arc::clone(&delay_timer);
 
+    // cpu thread
     // todo: when cpu sneezes, the rest of the components should catch a cold
     thread::Builder::new()
         .name("CPU".to_string())
         .spawn(move || {
-            let mut cpu = cpu::CPU::new(rom, graphics_mem_cpu_cpy);
+            let mut cpu = cpu::CPU::new(rom, graphics_mem_cpu_cpy, cpu_delay_timer);
             cpu_thread_blocker.wait();
             tracing::info!("CPU thread started");
             if pauses {
@@ -51,7 +55,21 @@ fn main() {
         })
         .unwrap();
 
-    graphics::main_thread(graphics_mem, initialize_all_components);
+    let delay_timer_sync = Arc::clone(&sync_barrier);
+    // delay timer thread
+    thread::Builder::new()
+        .name("Delay Timer".to_string())
+        .spawn(move || {
+            delay_timer_sync.wait();
+            tracing::info!("Delay Timer thread started");
+            loop {
+                std::thread::sleep(std::time::Duration::from_micros(1_000_000 / 60)); // 60Hz
+                delay_timer.write().unwrap().decrement();
+            }
+        })
+        .unwrap();
+
+    graphics::main_thread(graphics_mem, sync_barrier);
 }
 
 #[derive(clap::Parser)]

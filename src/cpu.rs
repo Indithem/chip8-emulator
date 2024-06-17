@@ -6,10 +6,15 @@ pub struct CPU {
     memory: memory::Memory,
     graphics_memory: Arc<RwLock<GraphicsMemory>>,
     instruction_ptr: usize,
+    delay_timer: Arc<RwLock<BaseTimer>>,
 }
 
 impl CPU {
-    pub fn new(file: std::fs::File, graphics_memory: Arc<RwLock<GraphicsMemory>>) -> Self {
+    pub fn new(
+        file: std::fs::File,
+        graphics_memory: Arc<RwLock<GraphicsMemory>>,
+        delay_timer: Arc<RwLock<BaseTimer>>,
+    ) -> Self {
         CPU {
             stack: Vec::new(),
             i_register: 0,
@@ -17,6 +22,7 @@ impl CPU {
             memory: memory::Memory::load_instructions(file),
             graphics_memory,
             instruction_ptr: memory::Memory::INSTRUCTIONS_START_ADDRESS,
+            delay_timer,
         }
     }
 
@@ -31,10 +37,12 @@ impl CPU {
         }
     }
 
+    #[rustfmt::skip]
     pub fn run(&mut self) -> ! {
         loop {
             let opcode = self.fetch_opcode();
             self.follow_isa(opcode);
+            std::thread::sleep(std::time::Duration::from_micros(1_000_000 / 500_000)); // 500MHz
         }
     }
 
@@ -90,8 +98,9 @@ fn pause(msg: String) {
 use std::io::{stdin, Read};
 use std::sync::{Arc, RwLock};
 
-use crate::memory;
 use crate::graphics::GraphicsMemory;
+use crate::memory;
+use crate::timers::BaseTimer;
 
 /// Has function for decoding and executing the opcodes
 mod isa;

@@ -48,7 +48,7 @@ impl CPU {
         loop {
             let opcode = self.fetch_opcode();
             self.follow_isa(opcode);
-            std::thread::sleep(std::time::Duration::from_micros(1_000_000 / 500_000)); // 500MHz
+            std::thread::sleep(std::time::Duration::from_micros(1_000_000 / 500)); // 500Hz
         }
     }
 

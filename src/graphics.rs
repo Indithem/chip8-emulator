@@ -55,6 +55,8 @@ impl ApplicationHandler for App {
 
         self.pixels = Some(Pixels::new(SCREEN_SIZE.0, SCREEN_SIZE.1, surface_texture).unwrap());
         self.window = Some(window);
+        self.barrier.wait();
+        let _ = self.render_mem();
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
@@ -70,7 +72,7 @@ impl ApplicationHandler for App {
                         self.pixels = None;
                     }
                 } else {
-                    tracing::info!("Empty pixels, trying to re-initialize");
+                    tracing::warn!("Empty pixels, trying to re-initialize");
                     let surface_texture =
                         SurfaceTexture::new(WIDTH, HEIGHT, self.window.as_ref().unwrap());
                     self.pixels =
@@ -92,7 +94,7 @@ impl ApplicationHandler for App {
                 Numpad0 | Numpad1 | Numpad2 | Numpad3 | Numpad4 | Numpad5 | Numpad6 | Numpad7
                 | Numpad8 | Numpad9 | KeyA | KeyB | KeyC | KeyD | KeyE | KeyF => {
                     if let Some(key) = crate::input::Key::from_key_code(key) {
-                        self.inp_sender.send((key, state)).unwrap();
+                        let _ = self.inp_sender.send((key, state));
                     }
                 }
                 _ => {}
@@ -110,9 +112,7 @@ impl ApplicationHandler for App {
                 std::thread::sleep(std::time::Duration::from_micros(1_000_000 / 60));
             }
 
-            Init => {
-                self.barrier.wait();
-            }
+            Init => {}
             _ => {}
         }
     }

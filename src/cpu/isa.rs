@@ -160,7 +160,7 @@ impl super::CPU {
                     0x07 => self.register_memory[register_x] = self.delay_timer.read().unwrap().read(),
                     0x0A => self.register_memory[register_x] = self.inputs.wait_for_key().into(),
                     0x15 => self.delay_timer.write().unwrap().set_timer(self.register_memory[register_x]),
-                    0x18 => todo!("Timers not yet implemented!"),
+                    0x18 => self.sound_timer.send(self.register_memory[register_x]).unwrap(),
 
                     0x1E => self.i_register = self.i_register.wrapping_add(self.register_memory[register_x] as u16),
 

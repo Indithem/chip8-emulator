@@ -8,6 +8,7 @@ pub struct CPU {
     instruction_ptr: usize,
     delay_timer: Arc<RwLock<BaseTimer>>,
     inputs: input::InpuState,
+    sound_timer: Sender<u8>
 }
 
 impl CPU {
@@ -16,6 +17,7 @@ impl CPU {
         graphics_memory: Arc<RwLock<GraphicsMemory>>,
         delay_timer: Arc<RwLock<BaseTimer>>,
         inputs: input::InpuState,
+        sound_timer: Sender<u8>
     ) -> Result<Self, &'static str> {
         Ok(CPU {
             stack: Vec::new(),
@@ -26,6 +28,7 @@ impl CPU {
             instruction_ptr: memory::Memory::INSTRUCTIONS_START_ADDRESS,
             delay_timer,
             inputs,
+            sound_timer
         })
     }
 
@@ -99,6 +102,7 @@ fn pause(msg: String) {
 }
 
 use std::io::{stdin, Read};
+use std::sync::mpsc::Sender;
 use std::sync::{Arc, RwLock};
 
 use crate::graphics::GraphicsMemory;

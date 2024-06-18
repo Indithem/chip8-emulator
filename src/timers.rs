@@ -2,7 +2,6 @@
 pub struct BaseTimer {
     count: u8,
 }
-
 impl BaseTimer {
     pub fn new() -> Self {
         BaseTimer {count: 0}

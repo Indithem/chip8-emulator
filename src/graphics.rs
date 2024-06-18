@@ -106,10 +106,8 @@ impl ApplicationHandler for App {
         match cause {
             // todo: emulate accurate timing/refresh rate
             Poll => {
-                // todo: handle this error!
-                // i.e., what to do when window is minimized?
-                // (better to pause the cpu execution too...)
                 let _ = self.render_mem();
+                std::thread::sleep(std::time::Duration::from_micros(1_000_000 / 60));
             }
 
             Init => {
@@ -147,7 +145,6 @@ impl App {
         }
 
         pixels.render()?;
-        std::thread::sleep(std::time::Duration::from_micros(1_000_000 / 60)); // 60Hz
         Ok(())
     }
 }

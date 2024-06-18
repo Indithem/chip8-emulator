@@ -26,7 +26,7 @@ fn main() {
         }
     }
 
-    let sync_barrier = Arc::new(Barrier::new(3));
+    let sync_barrier = Arc::new(Barrier::new(4));
 
     let delay_timer = Arc::new(RwLock::new(timers::BaseTimer::new()));
 
@@ -39,6 +39,7 @@ fn main() {
     let pauses = args.pauses;
     let cpu_delay_timer = Arc::clone(&delay_timer);
     let (tx, rx) = std::sync::mpsc::channel();
+    let (sound_tx, sound_rx) = std::sync::mpsc::channel();
 
     // cpu thread
     // todo: when cpu sneezes, the rest of the components should catch a cold
@@ -51,6 +52,7 @@ fn main() {
                 graphics_mem_cpu_cpy,
                 cpu_delay_timer,
                 input::InpuState::new(rx),
+                sound_tx,
             );
             // no unblock before panicing the thread, else the  window becomes unresponsive
             cpu_thread_blocker.wait();
@@ -75,6 +77,15 @@ fn main() {
                 std::thread::sleep(std::time::Duration::from_micros(1_000_000 / 60)); // 60Hz
                 delay_timer.write().unwrap().decrement();
             }
+        })
+        .unwrap();
+
+    let sound_sync = Arc::clone(&sync_barrier);
+    // sound thread
+    thread::Builder::new()
+        .name("Sound".to_string())
+        .spawn(move || {
+            sound::main_thread(sound_rx, sound_sync);
         })
         .unwrap();
 

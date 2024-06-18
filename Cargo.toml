@@ -9,6 +9,7 @@ edition = "2021"
 clap = { version = "4.5.7", features = ["cargo", "derive"] }
 pixels = "0.13.0"
 rand = "0.8.5"
+rodio = "0.18.1"
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 winit = { version = "0.30.1", features = ["rwh_05"] }

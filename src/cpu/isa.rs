@@ -60,9 +60,18 @@ impl super::CPU {
 
             0x8000..=0x8FFF => match opcode & 0x000F {
                 0x0 => self.register_memory[register_x] = self.register_memory[register_y],
-                0x1 => self.register_memory[register_x] |= self.register_memory[register_y],
-                0x2 => self.register_memory[register_x] &= self.register_memory[register_y],
-                0x3 => self.register_memory[register_x] ^= self.register_memory[register_y],
+                0x1 => {
+                    self.register_memory[register_x] |= self.register_memory[register_y];
+                    self.register_memory[0xF] = 0;
+                }
+                0x2 => {
+                    self.register_memory[register_x] &= self.register_memory[register_y];
+                    self.register_memory[0xF] = 0;
+                }
+                0x3 => {
+                    self.register_memory[register_x] ^= self.register_memory[register_y];
+                    self.register_memory[0xF] = 0;
+                }
                 0x4 => {
                     let (result, overflow) = self.register_memory[register_x]
                         .overflowing_add(self.register_memory[register_y]);

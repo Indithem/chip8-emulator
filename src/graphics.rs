@@ -9,13 +9,17 @@ const HEIGHT: Upixel = SCREEN_SIZE.1 * PIXEL_SCALE.1;
 const ON_PIXEL_COLOR: [u8; 4] = [0xe8, 0xf2, 0x55, 0xff];
 const OFF_PIXEL_COLOR: [u8; 4] = [0xb5, 0x83, 0x16, 0xff];
 
-pub fn main_thread(graphics_mem: Arc<RwLock<GraphicsMemory>>, barrier: Arc<Barrier>) {
+pub fn main_thread(
+    graphics_mem: Arc<RwLock<GraphicsMemory>>,
+    barrier: Arc<Barrier>,
+    inp_sender: Sender<(crate::input::Key, ElementState)>,
+) {
     // safety: unwrap, as for any failures, we want to panic
 
     let event_loop = EventLoop::new().unwrap(); // talk with the OS to create a window
     event_loop.set_control_flow(ControlFlow::Poll); // maybe use waituntil(60hz/sth), but docs say to use poll
 
-    let mut app = App::new(graphics_mem, barrier);
+    let mut app = App::new(graphics_mem, barrier, inp_sender);
 
     event_loop.run_app(&mut app).unwrap();
 
@@ -29,8 +33,8 @@ struct App {
     graphics_mem: Arc<RwLock<GraphicsMemory>>,
     pixels: Option<Pixels>,
     barrier: Arc<Barrier>,
+    inp_sender: Sender<(crate::input::Key, ElementState)>,
 }
-
 
 /// The complete memory assosciated to graphics
 pub struct GraphicsMemory(pub [bool; GraphicsMemory::TOTAL_PIXELS]);
@@ -51,11 +55,10 @@ impl ApplicationHandler for App {
 
         self.pixels = Some(Pixels::new(SCREEN_SIZE.0, SCREEN_SIZE.1, surface_texture).unwrap());
         self.window = Some(window);
-        self.draw().unwrap();
-        self.barrier.wait();
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
+        use KeyCode::*;
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
             WindowEvent::Resized(physical_size) => {
@@ -68,11 +71,32 @@ impl ApplicationHandler for App {
                     }
                 } else {
                     tracing::info!("Empty pixels, trying to re-initialize");
-                    let surface_texture = SurfaceTexture::new(WIDTH, HEIGHT, self.window.as_ref().unwrap());
+                    let surface_texture =
+                        SurfaceTexture::new(WIDTH, HEIGHT, self.window.as_ref().unwrap());
                     self.pixels =
                         Some(Pixels::new(SCREEN_SIZE.0, SCREEN_SIZE.1, surface_texture).unwrap());
                 }
             }
+
+            WindowEvent::KeyboardInput {
+                event:
+                    KeyEvent {
+                        physical_key: PhysicalKey::Code(key),
+                        state,
+                        repeat: false,
+                        ..
+                    },
+                ..
+            } => match key {
+                KeyCode::Escape => tracing::info!("Escape key {:?}", state),
+                Numpad0 | Numpad1 | Numpad2 | Numpad3 | Numpad4 | Numpad5 | Numpad6 | Numpad7
+                | Numpad8 | Numpad9 | KeyA | KeyB | KeyC | KeyD | KeyE | KeyF => {
+                    if let Some(key) = crate::input::Key::from_key_code(key) {
+                        self.inp_sender.send((key, state)).unwrap();
+                    }
+                }
+                _ => {}
+            },
             _ => {}
         }
     }
@@ -85,7 +109,11 @@ impl ApplicationHandler for App {
                 // todo: handle this error!
                 // i.e., what to do when window is minimized?
                 // (better to pause the cpu execution too...)
-                let _ = self.draw();
+                let _ = self.render_mem();
+            }
+
+            Init => {
+                self.barrier.wait();
             }
             _ => {}
         }
@@ -93,16 +121,21 @@ impl ApplicationHandler for App {
 }
 
 impl App {
-    fn new(graphics_mem: Arc<RwLock<GraphicsMemory>>, barrier: Arc<Barrier>) -> Self {
+    fn new(
+        graphics_mem: Arc<RwLock<GraphicsMemory>>,
+        barrier: Arc<Barrier>,
+        inp_sender: Sender<(crate::input::Key, ElementState)>,
+    ) -> Self {
         Self {
             window: None,
             pixels: None,
             graphics_mem,
             barrier,
+            inp_sender,
         }
     }
 
-    fn draw(&mut self) -> Result<(), Box<dyn std::error::Error + '_>> {
+    fn render_mem(&mut self) -> Result<(), Box<dyn std::error::Error + '_>> {
         let pixels = self.pixels.as_mut().ok_or("Pixels not initialized")?;
         let frame = pixels.frame_mut();
         for (display_pixel, memory_value) in
@@ -118,7 +151,6 @@ impl App {
         Ok(())
     }
 }
-
 
 impl GraphicsMemory {
     const TOTAL_PIXELS: usize =
@@ -143,12 +175,12 @@ impl GraphicsMemory {
         data[24] = true;
 
         data[63] = true;
-        data[63+64] = true;
-        data[63+128] = true;
-        data[63+192] = true;
-        data[63+256] = true;
-        data[63+320] = true;
-        data[63+384] = true;
+        data[63 + 64] = true;
+        data[63 + 128] = true;
+        data[63 + 192] = true;
+        data[63 + 256] = true;
+        data[63 + 320] = true;
+        data[63 + 384] = true;
         Self(data)
     }
 
@@ -202,18 +234,18 @@ impl GraphicsMemory {
     }
 }
 
-
 /// an arbitary variable type holder, that I want to change
 /// incase any API to dependecy libraries changes
 type Upixel = u32;
 
-use std::sync::{Arc, Barrier, RwLock};
+use std::sync::{mpsc::Sender, Arc, Barrier, RwLock};
 
 use winit::{
     application::ApplicationHandler,
     dpi::PhysicalSize,
-    event::WindowEvent,
+    event::{ElementState, KeyEvent, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
+    keyboard::{KeyCode, PhysicalKey},
     window::{Window, WindowAttributes, WindowId},
 };
 

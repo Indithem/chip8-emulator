@@ -7,6 +7,7 @@ pub struct CPU {
     graphics_memory: Arc<RwLock<GraphicsMemory>>,
     instruction_ptr: usize,
     delay_timer: Arc<RwLock<BaseTimer>>,
+    inputs: input::InpuState,
 }
 
 impl CPU {
@@ -14,6 +15,7 @@ impl CPU {
         file: std::fs::File,
         graphics_memory: Arc<RwLock<GraphicsMemory>>,
         delay_timer: Arc<RwLock<BaseTimer>>,
+        inputs: input::InpuState,
     ) -> Result<Self, &'static str> {
         Ok(CPU {
             stack: Vec::new(),
@@ -23,6 +25,7 @@ impl CPU {
             graphics_memory,
             instruction_ptr: memory::Memory::INSTRUCTIONS_START_ADDRESS,
             delay_timer,
+            inputs,
         })
     }
 
@@ -99,7 +102,7 @@ use std::io::{stdin, Read};
 use std::sync::{Arc, RwLock};
 
 use crate::graphics::GraphicsMemory;
-use crate::memory;
+use crate::{input, memory};
 use crate::timers::BaseTimer;
 
 /// Has function for decoding and executing the opcodes

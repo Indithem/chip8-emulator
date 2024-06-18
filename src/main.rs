@@ -38,6 +38,7 @@ fn main() {
     let cpu_thread_blocker = Arc::clone(&sync_barrier);
     let pauses = args.pauses;
     let cpu_delay_timer = Arc::clone(&delay_timer);
+    let (tx, rx) = std::sync::mpsc::channel();
 
     // cpu thread
     // todo: when cpu sneezes, the rest of the components should catch a cold
@@ -45,7 +46,12 @@ fn main() {
     thread::Builder::new()
         .name("CPU".to_string())
         .spawn(move || {
-            let cpu_constructed = cpu::CPU::new(rom, graphics_mem_cpu_cpy, cpu_delay_timer);
+            let cpu_constructed = cpu::CPU::new(
+                rom,
+                graphics_mem_cpu_cpy,
+                cpu_delay_timer,
+                input::InpuState::new(rx),
+            );
             // no unblock before panicing the thread, else the  window becomes unresponsive
             cpu_thread_blocker.wait();
             tracing::info!("CPU thread started");
@@ -72,7 +78,7 @@ fn main() {
         })
         .unwrap();
 
-    graphics::main_thread(graphics_mem, sync_barrier);
+    graphics::main_thread(graphics_mem, sync_barrier, tx);
 }
 
 #[derive(clap::Parser)]

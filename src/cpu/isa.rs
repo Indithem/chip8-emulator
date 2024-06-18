@@ -126,14 +126,39 @@ impl super::CPU {
                 ) as u8;
             }
 
-            0xE00..=0xEFFF => todo!("Need to implement key presses!"),
+            0xE00..=0xEFFF => {
+                let function = (opcode & 0x00FF) as u8;
+                match function {
+                    0x9E => {
+                        self.inputs.receive_keys();
+                        if let Ok(key) = self.register_memory[register_x].try_into() {
+                            if self.inputs.is_pressed(key) {
+                                self.instruction_ptr += 2;
+                            }
+                        } else {
+                            // error already logged in the try_into implementation
+                        }
+                    }
+                    0xA1 => {
+                        self.inputs.receive_keys();
+                        if let Ok(key) = self.register_memory[register_x].try_into() {
+                            if !self.inputs.is_pressed(key) {
+                                self.instruction_ptr += 2;
+                            }
+                        } else {
+                            // error already logged in the try_into implementation
+                        }
+                    }
+                    _ => unreachable!("Unknown opcode, cpu state: {}", self.dump(opcode)),
+                }
+            }
 
             #[rustfmt::skip]
             0xF00..=0xFFFF => {
                 let function = (opcode & 0x00FF) as u8;
                 match function {
                     0x07 => self.register_memory[register_x] = self.delay_timer.read().unwrap().read(),
-                    0x0A => todo!("Key presses not yet implemented!"),
+                    0x0A => self.register_memory[register_x] = self.inputs.wait_for_key().into(),
                     0x15 => self.delay_timer.write().unwrap().set_timer(self.register_memory[register_x]),
                     0x18 => todo!("Timers not yet implemented!"),
 

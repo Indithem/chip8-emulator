@@ -155,30 +155,7 @@ impl GraphicsMemory {
 
     pub fn new() -> Self {
         tracing::info!("Initializing graphics memory");
-        let mut data = [false; Self::TOTAL_PIXELS];
-        // a simple design of a 5x5 square
-        data[0] = true;
-        data[1] = true;
-        data[2] = true;
-        data[3] = true;
-        data[4] = true;
-        data[5] = true;
-        data[10] = true;
-        data[15] = true;
-        data[20] = true;
-        data[21] = true;
-        data[22] = true;
-        data[23] = true;
-        data[24] = true;
-
-        data[63] = true;
-        data[63 + 64] = true;
-        data[63 + 128] = true;
-        data[63 + 192] = true;
-        data[63 + 256] = true;
-        data[63 + 320] = true;
-        data[63 + 384] = true;
-        Self(data)
+        Self([false; Self::TOTAL_PIXELS])
     }
 
     /// Make a iterator over the pixels as registered in the graphics memory
@@ -217,8 +194,8 @@ impl GraphicsMemory {
         collision
     }
 
-    fn report_out_of_screen(x: usize, y: usize) {
-        tracing::warn!("Sprite out of screen, x: {}, y: {}, Clipping it!", x, y);
+    fn report_out_of_screen(_x: usize, _y: usize) {
+        // tracing::warn!("Sprite out of screen, x: {}, y: {}, Clipping it!", x, y);
     }
 
     #[cfg(debug_assertions)]

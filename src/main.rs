@@ -90,6 +90,10 @@ fn main() {
         .unwrap();
 
     graphics::main_thread(graphics_mem, sync_barrier, tx);
+
+    tracing::info!("Exiting main thread");
+    std::process::exit(0); // explicitly exit the program, so that other threads(cpu->GPUMem)
+             // can also be closed
 }
 
 #[derive(clap::Parser)]

@@ -52,6 +52,17 @@ impl CPU {
         }
     }
 
+    #[rustfmt::skip]
+    pub fn run_with_pauses_dump_mem(&mut self) -> ! {
+        let mut cycles = 0u64;
+        loop {
+            let opcode = self.fetch_opcode();
+            pause(format!("Starting Cycle: {}, CPU state: {}", cycles, self.dump(opcode)));
+            self.follow_isa(opcode);
+            cycles += 1;
+        }
+    }
+
     fn fetch_opcode(&mut self) -> u16 {
         let opcode = (self.memory[self.instruction_ptr] as u16) << 8
             | self.memory[self.instruction_ptr + 1] as u16;
@@ -64,7 +75,7 @@ impl CPU {
             "CPU Dump:
             Memory: {:?}
             Stack: {:?}
-            {:?}
+            IRegister 0x{:04X}
             Registry Memory: {:?}
             Current Opcode pointer: 0x{:04X}
             Opcode: {:?}
@@ -82,7 +93,7 @@ impl CPU {
         format!(
             "CPU Dump:
             Stack: {:?}
-            {:?}
+            IRegister 0x{:04X}
             Registry Memory: {:?}
             Current Opcode pointer: 0x{:04X}
             Opcode: {:?}

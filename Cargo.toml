@@ -1,3 +1,9 @@
+cargo-features = ["codegen-backend"]
+
+[profile.dev]
+# see https://bjorn3.github.io/2023/10/31/progress-report-oct-2023.html
+codegen-backend = "cranelift"
+
 [package]
 name = "chip-8-emulator"
 version = "0.1.0"
